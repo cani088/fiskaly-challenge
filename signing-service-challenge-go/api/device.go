@@ -17,7 +17,7 @@ type NewDeviceRequestBody struct {
 }
 
 type SignTransactionRequestBody struct {
-	DeviceId       string `json:"device_id"`
+	DeviceLabel    string `json:"device_label"`
 	DataToBeSigned string `json:"data_to_be_signed"`
 }
 
@@ -52,7 +52,7 @@ func (s *Server) CreateSignatureDevice(response http.ResponseWriter, request *ht
 			err.Error(),
 		})
 	} else {
-		WriteAPIResponse(response, http.StatusOK, device)
+		WriteAPIResponse(response, http.StatusOK, device.Label)
 	}
 
 }
@@ -67,8 +67,8 @@ func (s *Server) SignTransaction(response http.ResponseWriter, request *http.Req
 		})
 	}
 
-	var deviceId string = requestBody.DeviceId
-	device, err := s.repo.GetDeviceById(deviceId)
+	var deviceLabel string = requestBody.DeviceLabel
+	device, err := s.repo.GetDeviceByLabel(deviceLabel)
 
 	if err != nil {
 		WriteErrorResponse(response, http.StatusBadRequest, []string{
@@ -79,8 +79,8 @@ func (s *Server) SignTransaction(response http.ResponseWriter, request *http.Req
 	signatureResponse.Signature, signatureResponse.SignedData = device.SignData(requestBody.DataToBeSigned)
 
 	// TODO: make signatureCounter only private
-	_, err1 := s.repo.IncreaseDeviceCounter(deviceId)
-	err2 := s.repo.UpdateLastSignature(deviceId, signatureResponse.Signature)
+	err1 := s.repo.IncreaseDeviceCounter(deviceLabel)
+	err2 := s.repo.UpdateLastSignature(deviceLabel, signatureResponse.Signature)
 
 	if err1 != nil && err2 != nil {
 		WriteErrorResponse(response, http.StatusBadRequest, []string{

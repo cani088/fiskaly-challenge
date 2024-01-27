@@ -17,39 +17,38 @@ func NewInMemoryRepository() *InMemoryRepository {
 }
 
 func (m *InMemoryRepository) AddDevice(device domain.Device) error {
-	for _, value := range m.devices {
-		if device.Label == value.Label {
-			return errors.New(fmt.Sprintf("Device with label '%s' already exists", device.Label))
-		}
+	memoryDevice, _ := m.devices[device.Label]
+	if memoryDevice.ID == "" {
+		m.devices[device.Label] = device
+		return nil
 	}
-	m.devices[device.ID] = device
-	return nil
+	return errors.New(fmt.Sprintf("Device with label '%s' already exists", device.Label))
 }
 
-func (m *InMemoryRepository) GetDeviceById(id string) (domain.Device, error) {
-	device, _ := m.devices[id]
+func (m *InMemoryRepository) GetDeviceByLabel(label string) (domain.Device, error) {
+	device, _ := m.devices[label]
 	if device.ID == "" {
-		return domain.Device{}, errors.New(fmt.Sprintf("Device with label '%s' already exists", device.Label))
+		return domain.Device{}, errors.New(fmt.Sprintf("Device with label '%s' does not exist", device.Label))
 	}
 	return device, nil
 }
 
-func (m *InMemoryRepository) IncreaseDeviceCounter(id string) (domain.Device, error) {
-	var device = m.devices[id]
+func (m *InMemoryRepository) IncreaseDeviceCounter(label string) error {
+	var device = m.devices[label]
 	if device.ID == "" {
-		return domain.Device{}, errors.New("device does not exist")
+		return errors.New("device does not exist")
 	}
 	device.SignatureCounter = device.SignatureCounter + 1
-	m.devices[id] = device
-	return m.devices[id], nil
+	m.devices[label] = device
+	return nil
 }
 
-func (m *InMemoryRepository) UpdateLastSignature(id string, signature string) error {
-	var device = m.devices[id]
+func (m *InMemoryRepository) UpdateLastSignature(label string, signature string) error {
+	var device = m.devices[label]
 	if device.ID == "" {
 		return errors.New("device does not exist")
 	}
 	device.LastSignature = signature
-	m.devices[id] = device
+	m.devices[label] = device
 	return nil
 }

@@ -27,7 +27,8 @@ func (m ECCMarshaler) Encode(keyPair ECCKeyPair) ([]byte, []byte, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-
+	// Besnik - changed from pointer to value for the keyPair.Public
+	//publicKeyBytes, err := x509.MarshalPKIXPublicKey(&keyPair.Public)
 	publicKeyBytes, err := x509.MarshalPKIXPublicKey(keyPair.Public)
 	if err != nil {
 		return nil, nil, err
