@@ -43,3 +43,13 @@ func (m *InMemoryRepository) IncreaseDeviceCounter(id string) (domain.Device, er
 	m.devices[id] = device
 	return m.devices[id], nil
 }
+
+func (m *InMemoryRepository) UpdateLastSignature(id string, signature string) error {
+	var device = m.devices[id]
+	if device.ID == "" {
+		return errors.New("device does not exist")
+	}
+	device.LastSignature = signature
+	m.devices[id] = device
+	return nil
+}

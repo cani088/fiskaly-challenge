@@ -19,14 +19,14 @@ type ErrorResponse struct {
 // Server manages HTTP requests and dispatches them to the appropriate services.
 type Server struct {
 	listenAddress string
-	inMemoryRepo  *persistence.InMemoryRepository
+	repo          *persistence.InMemoryRepository
 }
 
 // NewServer is a factory to instantiate a new Server.
-func NewServer(listenAddress string, inMemoryRepo *persistence.InMemoryRepository) *Server {
+func NewServer(listenAddress string, repo *persistence.InMemoryRepository) *Server {
 	return &Server{
 		listenAddress: listenAddress,
-		inMemoryRepo:  inMemoryRepo,
+		repo:          repo,
 		// TODO: add services / further dependencies here ...
 	}
 }

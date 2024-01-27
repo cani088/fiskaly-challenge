@@ -45,7 +45,7 @@ func (s *Server) CreateSignatureDevice(response http.ResponseWriter, request *ht
 
 	device := domain.NewDevice(requestBody.Label, requestBody.Algorithm)
 
-	err = s.inMemoryRepo.AddDevice(*device)
+	err = s.repo.AddDevice(*device)
 
 	if err != nil {
 		WriteErrorResponse(response, http.StatusBadRequest, []string{
@@ -68,7 +68,7 @@ func (s *Server) SignTransaction(response http.ResponseWriter, request *http.Req
 	}
 
 	var deviceId string = requestBody.DeviceId
-	device, err := s.inMemoryRepo.GetDeviceById(deviceId)
+	device, err := s.repo.GetDeviceById(deviceId)
 
 	if err != nil {
 		WriteErrorResponse(response, http.StatusBadRequest, []string{
@@ -79,14 +79,12 @@ func (s *Server) SignTransaction(response http.ResponseWriter, request *http.Req
 	signatureResponse.Signature, signatureResponse.SignedData = device.SignData(requestBody.DataToBeSigned)
 
 	// TODO: make signatureCounter only private
-	_, err = s.inMemoryRepo.IncreaseDeviceCounter(deviceId)
-	if err != nil {
-		return
-	}
+	_, err1 := s.repo.IncreaseDeviceCounter(deviceId)
+	err2 := s.repo.UpdateLastSignature(deviceId, signatureResponse.Signature)
 
-	if err != nil {
+	if err1 != nil && err2 != nil {
 		WriteErrorResponse(response, http.StatusBadRequest, []string{
-			err.Error(),
+			err1.Error(), err2.Error(),
 		})
 	} else {
 		WriteAPIResponse(response, http.StatusOK, signatureResponse)

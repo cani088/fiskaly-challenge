@@ -34,14 +34,17 @@ func (d *Device) GenerateKeys() {
 		generator := crypto.RSAGenerator{}
 		keyPair, _ := generator.Generate()
 		rsaMarshaler := crypto.NewRSAMarshaler()
-		d.PrivateKey, d.PublicKey, _ = rsaMarshaler.Marshal(*keyPair)
+		d.PublicKey, d.PrivateKey, _ = rsaMarshaler.Marshal(*keyPair)
 	}
 
 	if d.Algorithm == "ECC" {
 		generator := crypto.ECCGenerator{}
-		keyPair, _ := generator.Generate()
+		keyPair, err := generator.Generate()
+		if err != nil {
+			print(err)
+		}
 		eccMarshaler := crypto.NewECCMarshaler()
-		d.PrivateKey, d.PublicKey, _ = eccMarshaler.Encode(*keyPair)
+		d.PublicKey, d.PrivateKey, _ = eccMarshaler.Encode(*keyPair)
 	}
 }
 
@@ -64,13 +67,15 @@ func (d *Device) GetDecodedECCKeyPair() (*crypto.ECCKeyPair, error) {
 
 func (d *Device) GetDecodedRSAKeyPair() (*crypto.RSAKeyPair, error) {
 	marshaler := crypto.RSAMarshaler{}
-	return marshaler.Unmarshal(d.PrivateKey)
+	keyPair, err := marshaler.Unmarshal(d.PrivateKey)
+	return keyPair, err
 }
 
 func (d *Device) SignData(data string) (signature string, signedData string) {
-	signedData = string(d.SignatureCounter) + "_" + data + "_"
+	signedData = fmt.Sprintf("%d_%s_", d.SignatureCounter, data)
 	if d.SignatureCounter > 0 {
-		signedData += d.LastSignature
+		inputBytes := []byte(d.LastSignature)
+		signedData += base64.StdEncoding.EncodeToString(inputBytes)
 	} else {
 		inputBytes := []byte(d.ID)
 		signedData += base64.StdEncoding.EncodeToString(inputBytes)
@@ -80,17 +85,17 @@ func (d *Device) SignData(data string) (signature string, signedData string) {
 		keyPair, _ := d.GetDecodedRSAKeyPair()
 		signer := crypto.NewRSASigner(keyPair.Private)
 		signature, _ := signer.Sign([]byte(signedData))
-		return string(signature), signedData
+		return base64.StdEncoding.EncodeToString(signature), signedData
 	}
 
-	if d.Algorithm == "RSA" {
+	if d.Algorithm == "ECC" {
 		keyPair, _ := d.GetDecodedECCKeyPair()
 		signer := crypto.NewECDSASigner(keyPair.Private)
 		signature, err := signer.Sign([]byte(signedData))
 		if err != nil {
 			return "", ""
 		}
-		return string(signature), signedData
+		return base64.StdEncoding.EncodeToString(signature), signedData
 	}
 
 	return "", signedData
