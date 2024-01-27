@@ -18,7 +18,17 @@ type Device struct {
 	LastSignature    string
 }
 
-func NewDevice(label string, algorithm string) *Device {
+var availableEncryptionTypes = []string{"RSA", "ECC"}
+
+func NewDevice(label string, algorithm string) (*Device, error) {
+	if label == "" {
+		return nil, errors.New("label cannot be empty")
+	}
+
+	if !isInArray(algorithm, availableEncryptionTypes) {
+		return nil, errors.New("encryption method is not available")
+	}
+
 	device := &Device{
 		ID:               uuid.NewString(),
 		Label:            label,
@@ -26,7 +36,17 @@ func NewDevice(label string, algorithm string) *Device {
 		SignatureCounter: 0,
 	}
 	device.GenerateKeys()
-	return device
+
+	return device, nil
+}
+
+func isInArray(needle any, haystack []string) bool {
+	for _, item := range haystack {
+		if needle == item {
+			return true
+		}
+	}
+	return false
 }
 
 func (d *Device) GenerateKeys() {
@@ -73,18 +93,20 @@ func (d *Device) GetDecodedRSAKeyPair() (*crypto.RSAKeyPair, error) {
 
 func (d *Device) SignData(data string) (signature string, signedData string) {
 	signedData = fmt.Sprintf("%d_%s_", d.SignatureCounter, data)
+	inputBytes := []byte(d.ID)
+
 	if d.SignatureCounter > 0 {
-		inputBytes := []byte(d.LastSignature)
-		signedData += base64.StdEncoding.EncodeToString(inputBytes)
-	} else {
-		inputBytes := []byte(d.ID)
-		signedData += base64.StdEncoding.EncodeToString(inputBytes)
+		inputBytes = []byte(d.LastSignature)
 	}
+	signedData += base64.StdEncoding.EncodeToString(inputBytes)
 
 	if d.Algorithm == "RSA" {
 		keyPair, _ := d.GetDecodedRSAKeyPair()
 		signer := crypto.NewRSASigner(keyPair.Private)
-		signature, _ := signer.Sign([]byte(signedData))
+		signature, err := signer.Sign([]byte(signedData))
+		if err != nil {
+			return "", ""
+		}
 		return base64.StdEncoding.EncodeToString(signature), signedData
 	}
 
