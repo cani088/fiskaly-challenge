@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"github.com/fiskaly/coding-challenges/signing-service-challenge/domain"
 	"github.com/fiskaly/coding-challenges/signing-service-challenge/persistence"
 	"net/http"
 )
@@ -20,18 +19,14 @@ type ErrorResponse struct {
 // Server manages HTTP requests and dispatches them to the appropriate services.
 type Server struct {
 	listenAddress string
-	storageRepo   persistence.StorageServiceType
+	inMemoryRepo  *persistence.InMemoryRepository
 }
 
-var Devices []domain.Device
-
 // NewServer is a factory to instantiate a new Server.
-func NewServer(listenAddress string, storage string) *Server {
-	var storageService persistence.StorageServiceType
-
+func NewServer(listenAddress string, inMemoryRepo *persistence.InMemoryRepository) *Server {
 	return &Server{
-		listenAddress:  listenAddress,
-		StorageService: storageService,
+		listenAddress: listenAddress,
+		inMemoryRepo:  inMemoryRepo,
 		// TODO: add services / further dependencies here ...
 	}
 }

@@ -2,7 +2,9 @@ package api
 
 import (
 	"encoding/json"
+	"github.com/fiskaly/coding-challenges/signing-service-challenge/crypto"
 	"github.com/fiskaly/coding-challenges/signing-service-challenge/domain"
+	"github.com/google/uuid"
 	"net/http"
 )
 
@@ -38,15 +40,33 @@ func (s *Server) CreateSignatureDevice(response http.ResponseWriter, request *ht
 		})
 	}
 
-	d := domain.Device{}
-	createdDevice, err := d.Create(requestBody.Label, requestBody.Algorithm)
+	device := domain.Device{
+		ID:               uuid.NewString(),
+		Label:            requestBody.Label,
+		Algorithm:        requestBody.Algorithm,
+		SignatureCounter: 0,
+		RSAKeyPair:       nil,
+		ECCKeyPair:       nil,
+	}
+
+	if requestBody.Algorithm == "RSA" {
+		generator := crypto.RSAGenerator{}
+		device.RSAKeyPair, _ = generator.Generate()
+	}
+
+	if requestBody.Algorithm == "ECC" {
+		generator := crypto.ECCGenerator{}
+		device.ECCKeyPair, _ = generator.Generate()
+	}
+
+	s.inMemoryRepo.AddDevice(device)
 
 	if err != nil {
 		WriteErrorResponse(response, http.StatusBadRequest, []string{
 			err.Error(),
 		})
 	} else {
-		WriteAPIResponse(response, http.StatusOK, createdDevice)
+		WriteAPIResponse(response, http.StatusOK, device)
 	}
 
 }
@@ -61,9 +81,7 @@ func (s *Server) SignTransaction(response http.ResponseWriter, request *http.Req
 	}
 
 	var deviceId string = requestBody.DeviceId
-	d := domain.Device{}
-
-	device, err := d.GetById(deviceId)
+	device, err := s.inMemoryRepo.IncreaseDeviceCounter(deviceId)
 
 	if err != nil {
 		WriteErrorResponse(response, http.StatusBadRequest, []string{
