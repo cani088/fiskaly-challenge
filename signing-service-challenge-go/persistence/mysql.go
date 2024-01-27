@@ -2,6 +2,7 @@ package persistence
 
 import (
 	"database/sql"
+	"errors"
 	"github.com/fiskaly/coding-challenges/signing-service-challenge/domain"
 )
 
@@ -9,17 +10,26 @@ type MySQLRepository struct {
 	db *sql.DB
 }
 
-func NewMySQLRepository(db *sql.DB) *MySQLRepository {
+var e = errors.New("mysql storage not available")
+
+func NewMySQLRepository(db *sql.DB) (*MySQLRepository, error) {
 	return &MySQLRepository{
 		db: db,
-	}
+	}, e
 }
 
-func (r *MySQLRepository) AddDevice(device domain.Device) {
-	//TODO: insert a device into MySQL
+func (r *MySQLRepository) AddDevice(device domain.Device) error {
+	return e
 }
 
-func (r *MySQLRepository) GetDeviceByID(id int) (domain.Device, error) {
-	//TODO: retrieve a device by ID from MySQL
-	return domain.Device{}, nil
+func (r *MySQLRepository) GetDeviceByLabel(label string) (domain.Device, error) {
+	return domain.Device{}, e
+}
+
+func (r *MySQLRepository) IncreaseDeviceCounter(label string) error {
+	return e
+}
+
+func (r *MySQLRepository) UpdateLastSignature(label string, signature string) error {
+	return e
 }

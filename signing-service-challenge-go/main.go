@@ -8,13 +8,16 @@ import (
 
 const (
 	ListenAddress = ":8080"
+	storageType   = "inMemory"
 	// TODO: add further configuration parameters here ...
 )
 
-func main() {
-	inMemoryRepo := persistence.NewInMemoryRepository()
+type repo persistence.StorageInterface
 
-	server := api.NewServer(ListenAddress, inMemoryRepo)
+func main() {
+	repo := persistence.NewInMemoryRepository()
+
+	server := api.NewServer(ListenAddress, repo)
 
 	if err := server.Run(); err != nil {
 		log.Fatal("Could not start server on ", ListenAddress)
