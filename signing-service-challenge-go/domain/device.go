@@ -1,6 +1,9 @@
 package domain
 
 import (
+	"encoding/base64"
+	"errors"
+	"fmt"
 	"github.com/fiskaly/coding-challenges/signing-service-challenge/crypto"
 	"github.com/google/uuid"
 )
@@ -12,6 +15,7 @@ type Device struct {
 	SignatureCounter int
 	PrivateKey       []byte
 	PublicKey        []byte
+	LastSignature    string
 }
 
 func NewDevice(label string, algorithm string) *Device {
@@ -26,7 +30,6 @@ func NewDevice(label string, algorithm string) *Device {
 }
 
 func (d *Device) GenerateKeys() {
-	// TODO: try to make this more elegant
 	if d.Algorithm == "RSA" {
 		generator := crypto.RSAGenerator{}
 		keyPair, _ := generator.Generate()
@@ -40,4 +43,38 @@ func (d *Device) GenerateKeys() {
 		eccMarshaler := crypto.NewECCMarshaler()
 		d.PrivateKey, d.PublicKey, _ = eccMarshaler.Encode(*keyPair)
 	}
+}
+
+func (d *Device) GetDecodedKeyPair() (interface{}, error) {
+	if d.Algorithm == "RSA" {
+		return d.GetDecodedRSAKeyPair()
+	}
+
+	if d.Algorithm == "ECC" {
+		return d.GetDecodedECCKeyPair()
+	}
+
+	return nil, errors.New(fmt.Sprintf("Algorithm %s is not supported", d.Algorithm))
+}
+
+func (d *Device) GetDecodedECCKeyPair() (*crypto.ECCKeyPair, error) {
+	marshaler := crypto.ECCMarshaler{}
+	return marshaler.Decode(d.PrivateKey)
+}
+
+func (d *Device) GetDecodedRSAKeyPair() (*crypto.RSAKeyPair, error) {
+	marshaler := crypto.RSAMarshaler{}
+	return marshaler.Unmarshal(d.PrivateKey)
+}
+
+func (d *Device) SignData(data string) (signature string, signedData string) {
+	signedData = string(d.SignatureCounter) + "_" + data + "_"
+	if d.SignatureCounter > 0 {
+		signedData += d.LastSignature
+	} else {
+		inputBytes := []byte(d.ID)
+		signedData += base64.StdEncoding.EncodeToString(inputBytes)
+	}
+
+	return "", signedData
 }

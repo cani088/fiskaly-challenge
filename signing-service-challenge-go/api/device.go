@@ -21,6 +21,11 @@ type SignTransactionRequestBody struct {
 	DataToBeSigned string `json:"data_to_be_signed"`
 }
 
+type SignTransactionResponse struct {
+	Signature  string `json:"signature"`
+	SignedData string `json:"signed_data"`
+}
+
 // CreateSignatureDevice Creates a new device for the user
 func (s *Server) CreateSignatureDevice(response http.ResponseWriter, request *http.Request) {
 	if request.Method != http.MethodPost {
@@ -54,6 +59,7 @@ func (s *Server) CreateSignatureDevice(response http.ResponseWriter, request *ht
 
 func (s *Server) SignTransaction(response http.ResponseWriter, request *http.Request) {
 	var requestBody SignTransactionRequestBody
+	var signatureResponse SignTransactionResponse
 	err := json.NewDecoder(request.Body).Decode(&requestBody)
 	if err != nil {
 		WriteErrorResponse(response, http.StatusInternalServerError, []string{
@@ -65,8 +71,12 @@ func (s *Server) SignTransaction(response http.ResponseWriter, request *http.Req
 	device, err := s.inMemoryRepo.GetDeviceById(deviceId)
 
 	if err != nil {
-
+		WriteErrorResponse(response, http.StatusBadRequest, []string{
+			err.Error(),
+		})
 	}
+
+	signatureResponse.Signature, signatureResponse.SignedData = device.SignData(requestBody.DataToBeSigned)
 
 	// TODO: make signatureCounter only private
 	_, err = s.inMemoryRepo.IncreaseDeviceCounter(deviceId)
@@ -79,6 +89,6 @@ func (s *Server) SignTransaction(response http.ResponseWriter, request *http.Req
 			err.Error(),
 		})
 	} else {
-		WriteAPIResponse(response, http.StatusOK, device)
+		WriteAPIResponse(response, http.StatusOK, signatureResponse)
 	}
 }
