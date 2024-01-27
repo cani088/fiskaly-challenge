@@ -76,5 +76,22 @@ func (d *Device) SignData(data string) (signature string, signedData string) {
 		signedData += base64.StdEncoding.EncodeToString(inputBytes)
 	}
 
+	if d.Algorithm == "RSA" {
+		keyPair, _ := d.GetDecodedRSAKeyPair()
+		signer := crypto.NewRSASigner(keyPair.Private)
+		signature, _ := signer.Sign([]byte(signedData))
+		return string(signature), signedData
+	}
+
+	if d.Algorithm == "RSA" {
+		keyPair, _ := d.GetDecodedECCKeyPair()
+		signer := crypto.NewECDSASigner(keyPair.Private)
+		signature, err := signer.Sign([]byte(signedData))
+		if err != nil {
+			return "", ""
+		}
+		return string(signature), signedData
+	}
+
 	return "", signedData
 }
