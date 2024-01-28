@@ -1,7 +1,9 @@
 package crypto
 
 import (
+	"crypto"
 	"crypto/rsa"
+	"crypto/sha256"
 	"crypto/x509"
 	"encoding/pem"
 )
@@ -51,4 +53,13 @@ func (m *RSAMarshaler) Unmarshal(privateKeyBytes []byte) (*RSAKeyPair, error) {
 		Private: privateKey,
 		Public:  &privateKey.PublicKey,
 	}, nil
+}
+
+func VerifyRSASignature(publicKey *rsa.PublicKey, signature, signedData []byte) (bool, error) {
+	hashed := sha256.Sum256(signedData)
+	err := rsa.VerifyPKCS1v15(publicKey, crypto.SHA256, hashed[:], signature)
+	if err != nil {
+		return false, err
+	}
+	return true, nil
 }

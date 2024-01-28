@@ -18,7 +18,7 @@ type NewDeviceRequestBody struct {
 }
 
 type SignTransactionRequestBody struct {
-	DeviceLabel    string `json:"device_label"`
+	DeviceId       string `json:"device_id"`
 	DataToBeSigned string `json:"data_to_be_signed"`
 }
 
@@ -49,11 +49,12 @@ func (s *Server) CreateSignatureDevice(response http.ResponseWriter, request *ht
 	}
 
 	err = s.repo.AddDevice(*device)
+	var res = map[string]string{"id": device.ID, "label": device.Label}
 
 	if err != nil {
 		handleError(response, http.StatusBadRequest, err)
 	} else {
-		WriteAPIResponse(response, http.StatusOK, device.Label)
+		WriteAPIResponse(response, http.StatusOK, res)
 	}
 
 }
@@ -67,8 +68,8 @@ func (s *Server) SignTransaction(response http.ResponseWriter, request *http.Req
 		return
 	}
 
-	var deviceLabel string = requestBody.DeviceLabel
-	device, err := s.repo.GetDeviceByLabel(deviceLabel)
+	var deviceId string = requestBody.DeviceId
+	device, err := s.repo.GetDeviceById(deviceId)
 
 	if err != nil {
 		handleError(response, http.StatusBadRequest, err)
@@ -77,18 +78,31 @@ func (s *Server) SignTransaction(response http.ResponseWriter, request *http.Req
 
 	signatureResponse.Signature, signatureResponse.SignedData = device.SignData(requestBody.DataToBeSigned)
 
-	// TODO: make signatureCounter only private
-	err1 := s.repo.IncreaseDeviceCounter(deviceLabel)
+	// Could not get the signature verification to work
+	//var signatureDevice, _ = s.repo.GetDeviceById(deviceId)
+	//signature = domain.NewSignature(signatureResponse.Signature, signatureResponse.SignedData, signatureDevice)
+
+	//if !signature.Verify() {
+	//	handleError(response, http.StatusBadRequest, errors.New("signature could not be verified"))
+	//	return
+	//}
+
+	err1 := s.repo.IncreaseDeviceCounter(deviceId)
 	if err1 != nil {
 		handleError(response, http.StatusBadRequest, err1)
 		return
 	}
-	err2 := s.repo.UpdateLastSignature(deviceLabel, signatureResponse.Signature)
+	err2 := s.repo.UpdateLastSignature(deviceId, signatureResponse.Signature)
 	if err2 != nil {
 		handleError(response, http.StatusBadRequest, err2)
 		return
 	}
 	WriteAPIResponse(response, http.StatusOK, signatureResponse)
+}
+
+func (s *Server) GetAllDevices(response http.ResponseWriter, request *http.Request) {
+	devices := s.repo.GetAllDevices()
+	WriteAPIResponse(response, http.StatusOK, devices)
 }
 
 func handleError(response http.ResponseWriter, statusCode int, err error) {

@@ -49,6 +49,7 @@ func isInArray(needle any, haystack []string) bool {
 	return false
 }
 
+// TODO: make key generation unified
 func (d *Device) GenerateKeys() {
 	if d.Algorithm == "RSA" {
 		generator := crypto.RSAGenerator{}
@@ -117,6 +118,7 @@ func (d *Device) SignData(data string) (signature string, signedData string) {
 		if err != nil {
 			return "", ""
 		}
+
 		return base64.StdEncoding.EncodeToString(signature), signedData
 	}
 

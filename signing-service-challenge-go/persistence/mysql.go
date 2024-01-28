@@ -33,3 +33,7 @@ func (r *MySQLRepository) IncreaseDeviceCounter(label string) error {
 func (r *MySQLRepository) UpdateLastSignature(label string, signature string) error {
 	return e
 }
+
+func (r *MySQLRepository) GetAllDevices() error {
+	return e
+}
