@@ -37,3 +37,7 @@ func (r *MySQLRepository) UpdateLastSignature(label string, signature string) er
 func (r *MySQLRepository) GetAllDevices() error {
 	return e
 }
+
+func (r *MySQLRepository) GetAllTransactions() error {
+	return e
+}

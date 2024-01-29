@@ -69,18 +69,6 @@ func (d *Device) GenerateKeys() {
 	}
 }
 
-func (d *Device) GetDecodedKeyPair() (interface{}, error) {
-	if d.Algorithm == "RSA" {
-		return d.GetDecodedRSAKeyPair()
-	}
-
-	if d.Algorithm == "ECC" {
-		return d.GetDecodedECCKeyPair()
-	}
-
-	return nil, errors.New(fmt.Sprintf("Algorithm %s is not supported", d.Algorithm))
-}
-
 func (d *Device) GetDecodedECCKeyPair() (*crypto.ECCKeyPair, error) {
 	marshaler := crypto.ECCMarshaler{}
 	return marshaler.Decode(d.PrivateKey)

@@ -9,22 +9,26 @@ import (
 )
 
 type InMemoryRepository struct {
-	devices    map[string]domain.Device
-	signatures map[string]domain.Signature
+	devices          map[string]domain.Device
+	deviceLock       sync.RWMutex
+	transactions     map[string]domain.Transaction
+	transactionsLock sync.RWMutex
 }
 
 var mutex sync.Mutex
 
 func NewInMemoryRepository() *InMemoryRepository {
 	return &InMemoryRepository{
-		devices:    make(map[string]domain.Device),
-		signatures: make(map[string]domain.Signature),
+		devices:          make(map[string]domain.Device),
+		deviceLock:       sync.RWMutex{},
+		transactions:     make(map[string]domain.Transaction),
+		transactionsLock: sync.RWMutex{},
 	}
 }
 
 func (m *InMemoryRepository) AddDevice(device domain.Device) error {
-	mutex.Lock()
-	defer mutex.Unlock()
+	m.deviceLock.Lock()
+	defer m.deviceLock.Unlock()
 
 	// Check if device with the Label already exists
 	for i := range m.devices {
@@ -38,8 +42,8 @@ func (m *InMemoryRepository) AddDevice(device domain.Device) error {
 }
 
 func (m *InMemoryRepository) GetDeviceById(id string) (domain.Device, error) {
-	mutex.Lock()
-	defer mutex.Unlock()
+	m.deviceLock.Lock()
+	defer m.deviceLock.Unlock()
 	device, _ := m.devices[id]
 	if device.ID == "" {
 		return domain.Device{}, errors.New(fmt.Sprintf("Device with id '%s' does not exist", device.ID))
@@ -48,8 +52,8 @@ func (m *InMemoryRepository) GetDeviceById(id string) (domain.Device, error) {
 }
 
 func (m *InMemoryRepository) IncreaseDeviceCounter(id string) error {
-	mutex.Lock()
-	defer mutex.Unlock()
+	m.deviceLock.Lock()
+	defer m.deviceLock.Unlock()
 	var device = m.devices[id]
 	if device.ID == "" {
 		return errors.New("device does not exist")
@@ -60,8 +64,8 @@ func (m *InMemoryRepository) IncreaseDeviceCounter(id string) error {
 }
 
 func (m *InMemoryRepository) UpdateLastSignature(id string, signature string) error {
-	mutex.Lock()
-	defer mutex.Unlock()
+	m.deviceLock.Lock()
+	defer m.deviceLock.Unlock()
 	var device = m.devices[id]
 	if device.ID == "" {
 		return errors.New("device does not exist")
@@ -72,8 +76,8 @@ func (m *InMemoryRepository) UpdateLastSignature(id string, signature string) er
 }
 
 func (m *InMemoryRepository) GetAllDevices() any {
-	mutex.Lock()
-	defer mutex.Unlock()
+	m.deviceLock.Lock()
+	defer m.deviceLock.Unlock()
 	var modifiedList []map[string]string
 
 	for _, item := range m.devices {
@@ -81,6 +85,33 @@ func (m *InMemoryRepository) GetAllDevices() any {
 			"id":               item.ID,
 			"label":            item.Label,
 			"signatureCounter": strconv.Itoa(item.SignatureCounter),
+		}
+
+		modifiedList = append(modifiedList, modifiedItem)
+	}
+	return modifiedList
+}
+
+func (m *InMemoryRepository) AddTransaction(transaction domain.Transaction) error {
+	m.transactionsLock.Lock()
+	defer m.transactionsLock.Unlock()
+
+	m.transactions[transaction.ID] = transaction
+
+	return nil
+}
+
+func (m *InMemoryRepository) GetAllTransactions() any {
+	m.transactionsLock.Lock()
+	defer m.transactionsLock.Unlock()
+	var modifiedList []map[string]string
+
+	for _, item := range m.transactions {
+		modifiedItem := map[string]string{
+			"transactionId": item.ID,
+			"signature":     item.Signature,
+			"signedData":    item.SignedData,
+			"deviceId":      item.Device.ID,
 		}
 
 		modifiedList = append(modifiedList, modifiedItem)

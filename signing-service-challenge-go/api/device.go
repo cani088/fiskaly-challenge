@@ -78,23 +78,28 @@ func (s *Server) SignTransaction(response http.ResponseWriter, request *http.Req
 
 	signatureResponse.Signature, signatureResponse.SignedData = device.SignData(requestBody.DataToBeSigned)
 
-	// Could not get the signature verification to work
-	//var signatureDevice, _ = s.repo.GetDeviceById(deviceId)
-	//signature = domain.NewSignature(signatureResponse.Signature, signatureResponse.SignedData, signatureDevice)
+	signatureDevice, _ := s.repo.GetDeviceById(deviceId)
+	transaction := domain.NewTransaction(signatureResponse.Signature, signatureResponse.SignedData, signatureDevice)
 
-	//if !signature.Verify() {
+	err = s.repo.AddTransaction(*transaction)
+	//if !transaction.Verify() {
 	//	handleError(response, http.StatusBadRequest, errors.New("signature could not be verified"))
 	//	return
 	//}
 
-	err1 := s.repo.IncreaseDeviceCounter(deviceId)
-	if err1 != nil {
-		handleError(response, http.StatusBadRequest, err1)
+	if err != nil {
+		handleError(response, http.StatusBadRequest, err)
 		return
 	}
-	err2 := s.repo.UpdateLastSignature(deviceId, signatureResponse.Signature)
-	if err2 != nil {
-		handleError(response, http.StatusBadRequest, err2)
+
+	err = s.repo.IncreaseDeviceCounter(deviceId)
+	if err != nil {
+		handleError(response, http.StatusBadRequest, err)
+		return
+	}
+	err = s.repo.UpdateLastSignature(deviceId, signatureResponse.Signature)
+	if err != nil {
+		handleError(response, http.StatusBadRequest, err)
 		return
 	}
 	WriteAPIResponse(response, http.StatusOK, signatureResponse)
@@ -103,6 +108,11 @@ func (s *Server) SignTransaction(response http.ResponseWriter, request *http.Req
 func (s *Server) GetAllDevices(response http.ResponseWriter, request *http.Request) {
 	devices := s.repo.GetAllDevices()
 	WriteAPIResponse(response, http.StatusOK, devices)
+}
+
+func (s *Server) getAllTransactions(response http.ResponseWriter, request *http.Request) {
+	transactions := s.repo.GetAllTransactions()
+	WriteAPIResponse(response, http.StatusOK, transactions)
 }
 
 func handleError(response http.ResponseWriter, statusCode int, err error) {

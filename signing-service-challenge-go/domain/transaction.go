@@ -5,15 +5,15 @@ import (
 	"github.com/google/uuid"
 )
 
-type Signature struct {
+type Transaction struct {
 	ID         string
 	Signature  string
 	SignedData string
 	Device     Device
 }
 
-func NewSignature(signature string, signedData string, device Device) *Signature {
-	return &Signature{
+func NewTransaction(signature string, signedData string, device Device) *Transaction {
+	return &Transaction{
 		ID:         uuid.NewString(),
 		Signature:  signature,
 		SignedData: signedData,
@@ -21,7 +21,7 @@ func NewSignature(signature string, signedData string, device Device) *Signature
 	}
 }
 
-func (s *Signature) Verify() bool {
+func (s *Transaction) Verify() bool {
 	if s.Device.Algorithm == "ECC" {
 		var keyPair, _ = s.Device.GetDecodedECCKeyPair()
 		verified := crypto.VerifyECDSASignature(keyPair.Public, []byte(s.Signature), []byte(s.SignedData))

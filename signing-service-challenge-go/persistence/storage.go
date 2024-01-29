@@ -8,4 +8,6 @@ type StorageInterface interface {
 	IncreaseDeviceCounter(id string) error
 	UpdateLastSignature(id string, signature string) error
 	GetAllDevices() any
+	GetAllTransactions() any
+	AddTransaction(transaction domain.Transaction) error
 }
