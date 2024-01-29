@@ -9,14 +9,16 @@ import (
 )
 
 type InMemoryRepository struct {
-	devices map[string]domain.Device
+	devices    map[string]domain.Device
+	signatures map[string]domain.Signature
 }
 
 var mutex sync.Mutex
 
 func NewInMemoryRepository() *InMemoryRepository {
 	return &InMemoryRepository{
-		devices: make(map[string]domain.Device),
+		devices:    make(map[string]domain.Device),
+		signatures: make(map[string]domain.Signature),
 	}
 }
 

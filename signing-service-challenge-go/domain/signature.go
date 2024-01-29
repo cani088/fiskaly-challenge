@@ -2,9 +2,11 @@ package domain
 
 import (
 	"github.com/fiskaly/coding-challenges/signing-service-challenge/crypto"
+	"github.com/google/uuid"
 )
 
 type Signature struct {
+	ID         string
 	Signature  string
 	SignedData string
 	Device     Device
@@ -12,6 +14,7 @@ type Signature struct {
 
 func NewSignature(signature string, signedData string, device Device) *Signature {
 	return &Signature{
+		ID:         uuid.NewString(),
 		Signature:  signature,
 		SignedData: signedData,
 		Device:     device,
